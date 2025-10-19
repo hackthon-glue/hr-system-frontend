@@ -652,7 +652,7 @@ export default function RecruiterInterviewDetailPage() {
                     </label>
                     <select
                       value={feedback.result}
-                      onChange={(e) => setFeedback({ ...feedback, result: e.target.value })}
+                      onChange={(e) => setFeedback({ ...feedback, result: e.target.value as "pending" | "passed" | "failed" | "on_hold" })}
                       className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition px-4 py-2"
                     >
                       <option value="pending">未決定</option>

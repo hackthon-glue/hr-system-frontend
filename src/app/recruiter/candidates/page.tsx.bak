@@ -297,7 +297,7 @@ export default function RecruiterCandidatesPage() {
         {/* Candidates Grid */}
         {displayCandidates.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayCandidates.map((candidate: any) => {
+            {displayCandidates.map((candidate) => {
               const matchingScore = candidate.matching_score || matchingResults.find(m => m.candidate_id === candidate.id)?.matching_score;
 
               return (

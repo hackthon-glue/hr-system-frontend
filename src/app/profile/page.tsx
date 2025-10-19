@@ -54,12 +54,13 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error fetching profile:', error);
 
+      const err = error as { response?: { status?: number } };
       // If user doesn't have a candidate profile (404), redirect based on their role
-      if (error?.response?.status === 404) {
+      if (err?.response?.status === 404) {
         alert('Candidate profile not found. Recruiters please use the recruiter dashboard.');
         // Check if recruiter by trying to access recruiter dashboard
         router.push('/recruiter/dashboard');
-      } else if (error?.response?.status === 401) {
+      } else if (err?.response?.status === 401) {
         // Unauthorized - redirect to login
         router.push('/login');
       }
@@ -293,7 +294,7 @@ export default function ProfilePage() {
                   <Input
                     label="Years of Experience"
                     type="number"
-                    value={candidate.years_of_experience.toString()}
+                    value={(candidate.years_of_experience || 0).toString()}
                     onChange={(e) => setCandidate({ ...candidate, years_of_experience: parseInt(e.target.value) || 0 })}
                     placeholder="e.g., 5"
                     prefix={

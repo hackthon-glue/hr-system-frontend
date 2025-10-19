@@ -42,10 +42,11 @@ export default function RecruiterApplicationDetailPage() {
   const handleStatusChange = async (newStatus: string) => {
     if (!application) return;
 
+    type ApplicationStatus = 'draft' | 'submitted' | 'screening' | 'interview' | 'offer' | 'accepted' | 'rejected' | 'withdrawn';
     try {
       setUpdating(true);
-      await candidateService.updateApplication(parseInt(applicationId), { status: newStatus });
-      setApplication({ ...application, status: newStatus });
+      await candidateService.updateApplication(parseInt(applicationId), { status: newStatus as ApplicationStatus });
+      setApplication({ ...application, status: newStatus as ApplicationStatus });
     } catch (error) {
       console.error('Failed to update status:', error);
       alert('Failed to update status');
@@ -291,7 +292,7 @@ export default function RecruiterApplicationDetailPage() {
         {/* Candidate Link */}
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8 text-center">
           <p className="text-gray-600 mb-4">View candidate details</p>
-          <Link href={`/recruiter/candidates/${application.candidate?.id || 'unknown'}`}>
+          <Link href={`/recruiter/candidates/${application.candidate || 'unknown'}`}>
             <Button className="shadow-lg hover:shadow-xl">
               View Candidate Profile
             </Button>

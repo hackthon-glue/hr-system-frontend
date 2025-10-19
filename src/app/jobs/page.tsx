@@ -41,7 +41,7 @@ export default function JobsPage() {
   const fetchAppliedJobs = useCallback(async () => {
     try {
       const data = await candidateService.getApplications();
-      const applications = Array.isArray(data) ? data : (data?.results || data || []);
+      const applications = Array.isArray(data) ? data : ((data as { results?: { job: { id: number } }[] })?.results || []);
       const jobIds = new Set(applications.map(app => app.job.id));
       setAppliedJobIds(jobIds);
     } catch (error) {

@@ -102,6 +102,7 @@ export default function RecruiterCandidatesPage() {
         current_position: m.current_position,
         years_of_experience: m.years_of_experience,
         matching_score: m.matching_score,
+        expected_salary: undefined,
       }))
     : filteredCandidates;
 

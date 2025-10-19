@@ -17,8 +17,14 @@ export interface Candidate {
   nationality?: string;
   address?: string;
   postal_code?: string;
+  skills?: CandidateSkill[];
+  matching_score?: number;
   current_position?: string;
-  years_of_experience: number;
+  expected_salary?: number;
+  years_of_experience?: number;
+  education?: Education[];
+  work_experiences?: WorkExperience[];
+  years_of_experience?: number;
   status: 'active' | 'inactive' | 'interviewing' | 'hired';
   expected_salary?: number;
   portfolio_url?: string;
@@ -37,6 +43,8 @@ export interface CandidateSkill {
     category: string;
     description?: string;
   };
+  skill_name?: string;
+  name?: string;
   proficiency_level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   years_of_experience: number;
 }
@@ -45,6 +53,7 @@ export interface Education {
   id: number;
   candidate: number;
   institution_name: string;
+  institution?: string;
   degree: string;
   field_of_study: string;
   start_date: string;
@@ -58,6 +67,7 @@ export interface WorkExperience {
   id: number;
   candidate: number;
   company_name: string;
+  company?: string;
   position: string;
   employment_type: string;
   start_date: string;
@@ -78,6 +88,7 @@ export interface Application {
     job_code: string;
     location: string;
     department: string;
+    company?: string;
   };
   cover_letter?: string;
   matching_score?: number;
@@ -169,6 +180,8 @@ class CandidateService {
 
   async addCandidateSkill(candidateId: number, data: {
     skill_id: number;
+  skill_name?: string;
+  name?: string;
     proficiency_level: string;
     years_of_experience: number;
   }) {

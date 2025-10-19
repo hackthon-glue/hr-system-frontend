@@ -7,20 +7,28 @@ export interface Job {
   job_code: string;
   department: string;
   location: string;
-  employment_type: 'full_time' | 'part_time' | 'contract' | 'intern';
-  experience_level: 'junior' | 'mid' | 'senior' | 'lead';
+  employment_type: 'full_time' | 'part_time' | 'contract' | 'internship';
+  experience_level: 'entry' | 'junior' | 'mid' | 'senior' | 'lead';
   description: string;
   responsibilities: string;
   qualifications: string;
+  preferred_qualifications?: string;
   salary_min: number;
   salary_max: number;
+  salary_currency?: string;
   benefits: string;
+  remote_work_option?: string;
   status: 'draft' | 'active' | 'paused' | 'closed' | 'filled';
   hiring_manager: number;
   published_date: string | null;
+  start_date?: string;
   deadline: string;
+  application_deadline?: string;
   created_at: string;
   updated_at: string;
+  requirements?: JobRequirement[];
+  required_skills?: JobSkill[];
+  company?: string;
 }
 
 export interface JobSkill {

@@ -42,10 +42,11 @@ export default function RecruiterApplicationDetailPage() {
   const handleStatusChange = async (newStatus: string) => {
     if (!application) return;
 
+    type ApplicationStatus = 'draft' | 'submitted' | 'screening' | 'interview' | 'offer' | 'accepted' | 'rejected' | 'withdrawn';
     try {
       setUpdating(true);
-      await candidateService.updateApplication(parseInt(applicationId), { status: newStatus });
-      setApplication({ ...application, status: newStatus });
+      await candidateService.updateApplication(parseInt(applicationId), { status: newStatus as ApplicationStatus });
+      setApplication({ ...application, status: newStatus as ApplicationStatus });
     } catch (error) {
       console.error('Failed to update status:', error);
       alert('Failed to update status');
