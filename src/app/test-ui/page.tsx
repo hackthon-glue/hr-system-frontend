@@ -1,0 +1,323 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Button, ButtonGroup } from '@/components/ui/Button';
+import { Input, Textarea, Select } from '@/components/ui/Input';
+import { Card, CardHeader, CardBody, CardFooter, StatusCard, MetricCard } from '@/components/ui/Card';
+import { Badge, StatusBadge, ExperienceBadge, SkillBadge, CountBadge } from '@/components/ui/Badge';
+import { Modal, ConfirmDialog, Drawer } from '@/components/ui/Modal';
+import { Tabs, VerticalTabs } from '@/components/ui/Tabs';
+import { Alert, Toast, ToastContainer, InlineAlert } from '@/components/ui/Alert';
+
+export default function TestUIPage() {
+  const [showModal, setShowModal] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [toasts, setToasts] = useState<unknown[]>([]);
+
+  const addToast = (variant: 'info' | 'success' | 'warning' | 'danger') => {
+    const newToast = {
+      id: Date.now().toString(),
+      variant,
+      title: `${variant}通知`,
+      description: 'これはテスト通知です。',
+      duration: 5000,
+    };
+    setToasts([...toasts, newToast]);
+  };
+
+  const tabs = [
+    {
+      id: 'tab1',
+      label: 'タブ1',
+      content: <div className="p-4">タブ1のコンテンツ</div>,
+      badge: 3,
+    },
+    {
+      id: 'tab2',
+      label: 'タブ2',
+      content: <div className="p-4">タブ2のコンテンツ</div>,
+    },
+    {
+      id: 'tab3',
+      label: 'タブ3',
+      content: <div className="p-4">タブ3のコンテンツ</div>,
+      disabled: true,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <h1 className="text-3xl font-bold text-gray-900">UIコンポーネントテスト</h1>
+
+        {/* Buttons */}
+        <Card>
+          <CardHeader title="ボタン" subtitle="様々なバリエーションのボタン" />
+          <CardBody>
+            <div className="space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                <Button variant="primary">Primary</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button variant="outline">Outline</Button>
+                <Button variant="ghost">Ghost</Button>
+                <Button variant="danger">Danger</Button>
+                <Button variant="success">Success</Button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button size="xs">XS Size</Button>
+                <Button size="sm">Small</Button>
+                <Button size="md">Medium</Button>
+                <Button size="lg">Large</Button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button loading>Loading</Button>
+                <Button disabled>Disabled</Button>
+                <Button fullWidth>Full Width</Button>
+              </div>
+              <ButtonGroup>
+                <Button variant="outline">左</Button>
+                <Button variant="outline">中央</Button>
+                <Button variant="outline">右</Button>
+              </ButtonGroup>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Form Inputs */}
+        <Card>
+          <CardHeader title="フォーム入力" subtitle="入力フィールドのバリエーション" />
+          <CardBody>
+            <div className="space-y-4 max-w-md">
+              <Input
+                label="名前"
+                placeholder="お名前を入力"
+                required
+                helperText="フルネームを入力してください"
+              />
+              <Input
+                label="メールアドレス"
+                type="email"
+                placeholder="email@example.com"
+                prefix="@"
+                error="無効なメールアドレスです"
+              />
+              <Textarea
+                label="コメント"
+                placeholder="コメントを入力"
+                helperText="最大500文字まで"
+                rows={4}
+              />
+              <Select
+                label="役職"
+                placeholder="選択してください"
+                options={[
+                  { value: 'engineer', label: 'エンジニア' },
+                  { value: 'designer', label: 'デザイナー' },
+                  { value: 'manager', label: 'マネージャー' },
+                ]}
+              />
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Badges */}
+        <Card>
+          <CardHeader title="バッジ" subtitle="状態やラベルの表示" />
+          <CardBody>
+            <div className="space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                <Badge>Default</Badge>
+                <Badge variant="primary">Primary</Badge>
+                <Badge variant="success">Success</Badge>
+                <Badge variant="warning">Warning</Badge>
+                <Badge variant="danger">Danger</Badge>
+                <Badge variant="info">Info</Badge>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <StatusBadge status="active" />
+                <StatusBadge status="pending" />
+                <StatusBadge status="approved" />
+                <StatusBadge status="rejected" />
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <ExperienceBadge level="junior" />
+                <ExperienceBadge level="mid" />
+                <ExperienceBadge level="senior" />
+                <ExperienceBadge level="lead" />
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <SkillBadge skill="React" level="expert" />
+                <SkillBadge skill="TypeScript" level="advanced" />
+                <SkillBadge skill="Python" level="intermediate" />
+                <CountBadge count={42} />
+                <CountBadge count={999} />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatusCard
+            status="info"
+            title="情報"
+            description="これは情報メッセージです"
+          />
+          <StatusCard
+            status="success"
+            title="成功"
+            description="処理が正常に完了しました"
+          />
+          <StatusCard
+            status="warning"
+            title="警告"
+            description="注意が必要な状態です"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <MetricCard
+            label="総応募数"
+            value="1,234"
+            change={{ value: '+12%', trend: 'up' }}
+          />
+          <MetricCard
+            label="採用率"
+            value="23.5%"
+            change={{ value: '-2.3%', trend: 'down' }}
+          />
+          <MetricCard
+            label="平均日数"
+            value="14日"
+            change={{ value: '0%', trend: 'neutral' }}
+          />
+          <MetricCard
+            label="アクティブ求人"
+            value="42"
+            change={{ value: '+5', trend: 'up' }}
+          />
+        </div>
+
+        {/* Alerts */}
+        <Card>
+          <CardHeader title="アラート" subtitle="通知メッセージ" />
+          <CardBody>
+            <div className="space-y-4">
+              <Alert variant="info" title="お知らせ" closable>
+                これは情報アラートです。重要な情報をユーザーに伝えます。
+              </Alert>
+              <Alert variant="success" title="成功" closable>
+                操作が正常に完了しました。
+              </Alert>
+              <Alert variant="warning" title="警告" closable>
+                注意が必要な状態です。
+              </Alert>
+              <Alert variant="danger" title="エラー" closable>
+                エラーが発生しました。
+              </Alert>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Tabs */}
+        <Card>
+          <CardHeader title="タブ" subtitle="コンテンツの切り替え" />
+          <CardBody>
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-4">通常タブ</h3>
+                <Tabs tabs={tabs} variant="line" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-4">囲みタブ</h3>
+                <Tabs tabs={tabs} variant="enclosed" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-4">ピルタブ</h3>
+                <Tabs tabs={tabs} variant="pills" />
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Modal Triggers */}
+        <Card>
+          <CardHeader title="モーダル・ダイアログ" subtitle="ポップアップUI" />
+          <CardBody>
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={() => setShowModal(true)}>
+                モーダルを開く
+              </Button>
+              <Button variant="danger" onClick={() => setShowConfirm(true)}>
+                確認ダイアログ
+              </Button>
+              <Button variant="outline" onClick={() => setShowDrawer(true)}>
+                ドロワーを開く
+              </Button>
+            </div>
+            <div className="flex gap-2 flex-wrap mt-4">
+              <Button variant="info" size="sm" onClick={() => addToast('info')}>
+                Info Toast
+              </Button>
+              <Button variant="success" size="sm" onClick={() => addToast('success')}>
+                Success Toast
+              </Button>
+              <Button variant="warning" size="sm" onClick={() => addToast('warning')}>
+                Warning Toast
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => addToast('danger')}>
+                Danger Toast
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Modals */}
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title="モーダルタイトル"
+          description="モーダルの説明文です"
+          size="md"
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowModal(false)}>
+                キャンセル
+              </Button>
+              <Button onClick={() => setShowModal(false)}>
+                確認
+              </Button>
+            </div>
+          }
+        >
+          <p>モーダルのコンテンツがここに表示されます。</p>
+        </Modal>
+
+        <ConfirmDialog
+          isOpen={showConfirm}
+          onClose={() => setShowConfirm(false)}
+          onConfirm={() => {
+            console.log('Confirmed');
+            setShowConfirm(false);
+          }}
+          title="削除の確認"
+          message="この項目を削除してもよろしいですか？この操作は取り消せません。"
+          variant="danger"
+        />
+
+        <Drawer
+          isOpen={showDrawer}
+          onClose={() => setShowDrawer(false)}
+          title="ドロワータイトル"
+          position="right"
+          size="md"
+        >
+          <p>ドロワーのコンテンツがここに表示されます。</p>
+        </Drawer>
+
+        <ToastContainer toasts={toasts} position="top-right" />
+      </div>
+    </div>
+  );
+}

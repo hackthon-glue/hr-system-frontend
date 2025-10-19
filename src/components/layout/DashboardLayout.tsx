@@ -1,0 +1,214 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+import { cn } from '@/lib/utils';
+
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  user?: {
+    name: string;
+    email: string;
+    role: 'candidate' | 'recruiter' | 'admin';
+    avatar?: string;
+  };
+  sidebarItems?: unknown[];
+  className?: string;
+}
+
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
+  children,
+  user,
+  sidebarItems = [],
+  className,
+}) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-[var(--color-gray-50)]">
+      {/* ヘッダー */}
+      <Header
+        user={user}
+        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        notifications={5}
+      />
+
+      <div className="flex">
+        {/* サイドバー */}
+        <Sidebar
+          items={sidebarItems}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          role={user?.role}
+        />
+
+        {/* メインコンテンツ */}
+        <main
+          className={cn(
+            'flex-1 min-h-[calc(100vh-4rem)]',
+            'p-4 lg:p-6',
+            className
+          )}
+        >
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+// ページレイアウトコンポーネント（タイトルとパンくずリスト付き）
+interface PageLayoutProps {
+  title: string;
+  description?: string;
+  breadcrumbs?: Array<{
+    label: string;
+    href?: string;
+  }>;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+export const PageLayout: React.FC<PageLayoutProps> = ({
+  title,
+  description,
+  breadcrumbs,
+  actions,
+  children,
+}) => {
+  return (
+    <div className="space-y-6">
+      {/* パンくずリスト */}
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <nav className="flex items-center text-sm text-[var(--color-gray-600)]">
+          {breadcrumbs.map((crumb, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && (
+                <svg
+                  className="w-4 h-4 mx-2 text-[var(--color-gray-400)]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+              {crumb.href ? (
+                <a
+                  href={crumb.href}
+                  className="hover:text-[var(--color-primary)] transition-colors"
+                >
+                  {crumb.label}
+                </a>
+              ) : (
+                <span className="text-[var(--color-gray-900)] font-medium">
+                  {crumb.label}
+                </span>
+              )}
+            </React.Fragment>
+          ))}
+        </nav>
+      )}
+
+      {/* ページヘッダー */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-gray-900)]">
+            {title}
+          </h1>
+          {description && (
+            <p className="mt-1 text-sm text-[var(--color-gray-600)]">
+              {description}
+            </p>
+          )}
+        </div>
+        {actions && (
+          <div className="flex items-center gap-2">
+            {actions}
+          </div>
+        )}
+      </div>
+
+      {/* ページコンテンツ */}
+      <div>{children}</div>
+    </div>
+  );
+};
+
+// グリッドレイアウトヘルパー
+interface GridLayoutProps {
+  children: React.ReactNode;
+  cols?: 1 | 2 | 3 | 4;
+  gap?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+export const GridLayout: React.FC<GridLayoutProps> = ({
+  children,
+  cols = 3,
+  gap = 'md',
+  className,
+}) => {
+  const colsClass = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 md:grid-cols-2',
+    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+  };
+
+  const gapClass = {
+    sm: 'gap-4',
+    md: 'gap-6',
+    lg: 'gap-8',
+  };
+
+  return (
+    <div className={cn('grid', colsClass[cols], gapClass[gap], className)}>
+      {children}
+    </div>
+  );
+};
+
+// 2カラムレイアウト（メイン + サイドバー）
+interface TwoColumnLayoutProps {
+  main: React.ReactNode;
+  sidebar: React.ReactNode;
+  sidebarPosition?: 'left' | 'right';
+  sidebarWidth?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+export const TwoColumnLayout: React.FC<TwoColumnLayoutProps> = ({
+  main,
+  sidebar,
+  sidebarPosition = 'right',
+  sidebarWidth = 'md',
+  className,
+}) => {
+  const widthClass = {
+    sm: 'lg:w-64',
+    md: 'lg:w-80',
+    lg: 'lg:w-96',
+  };
+
+  return (
+    <div className={cn('flex flex-col lg:flex-row gap-6', className)}>
+      {sidebarPosition === 'left' && (
+        <aside className={cn('w-full', widthClass[sidebarWidth])}>
+          {sidebar}
+        </aside>
+      )}
+      <div className="flex-1">
+        {main}
+      </div>
+      {sidebarPosition === 'right' && (
+        <aside className={cn('w-full', widthClass[sidebarWidth])}>
+          {sidebar}
+        </aside>
+      )}
+    </div>
+  );
+};

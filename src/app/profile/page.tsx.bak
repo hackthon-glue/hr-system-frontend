@@ -1,0 +1,634 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { candidateService, Candidate, CandidateSkill, Education, WorkExperience } from '@/lib/api/candidates';
+
+// Proficiency level color mapping
+const proficiencyColors = {
+  'beginner': 'bg-gray-200',
+  'intermediate': 'bg-blue-400',
+  'advanced': 'bg-blue-600',
+  'expert': 'bg-purple-600',
+};
+
+const proficiencyPercentage = {
+  'beginner': 25,
+  'intermediate': 50,
+  'advanced': 75,
+  'expert': 100,
+};
+
+export default function ProfilePage() {
+  const router = useRouter();
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [skills, setSkills] = useState<CandidateSkill[]>([]);
+  const [education, setEducation] = useState<Education[]>([]);
+  const [experience, setExperience] = useState<WorkExperience[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const candidateData = await candidateService.getCurrentCandidate();
+      setCandidate(candidateData);
+
+      if (candidateData.id) {
+        const [skillsData, educationData, experienceData] = await Promise.all([
+          candidateService.getCandidateSkills(candidateData.id),
+          candidateService.getCandidateEducation(candidateData.id),
+          candidateService.getCandidateExperience(candidateData.id),
+        ]);
+
+        setSkills(Array.isArray(skillsData) ? skillsData : []);
+        setEducation(Array.isArray(educationData) ? educationData : []);
+        setExperience(Array.isArray(experienceData) ? experienceData : []);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+
+      // If user doesn't have a candidate profile (404), redirect based on their role
+      if (error?.response?.status === 404) {
+        alert('Candidate profile not found. Recruiters please use the recruiter dashboard.');
+        // Check if recruiter by trying to access recruiter dashboard
+        router.push('/recruiter/dashboard');
+      } else if (error?.response?.status === 401) {
+        // Unauthorized - redirect to login
+        router.push('/login');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (candidate) {
+      try {
+        await candidateService.updateCandidate(candidate.id, candidate);
+        alert('Profile updated successfully');
+        setEditMode(false);
+      } catch (error) {
+        alert('Failed to update profile');
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
+    router.push('/login');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+          <div className="absolute inset-0 rounded-full bg-blue-400 opacity-20 blur-xl animate-pulse"></div>
+        </div>
+        <p className="mt-6 text-gray-700 font-medium">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!candidate) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <div className="relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 max-w-md w-full">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full -mr-16 -mt-16"></div>
+          <div className="relative p-8 text-center">
+            <div className="relative inline-block mb-4">
+              <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-2xl animate-pulse"></div>
+              <div className="relative w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-xl font-bold text-gray-800 mb-6">Profile not found</p>
+            <Link href="/dashboard">
+              <Button fullWidth size="lg" className="shadow-lg hover:shadow-xl">Back to Dashboard</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Navigation */}
+      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/dashboard" className="flex items-center gap-2 group">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all group-hover:scale-105">
+                  <span className="text-white font-bold text-lg">HR</span>
+                </div>
+                <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Agent System</span>
+              </Link>
+              <div className="hidden md:flex items-center space-x-1">
+                <Link href="/dashboard" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all">
+                  Dashboard
+                </Link>
+                <Link href="/jobs" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all">
+                  Job Search
+                </Link>
+                <Link href="/applications" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all">
+                  Applications
+                </Link>
+                <Link href="/concierge" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50/50 rounded-lg transition-all">
+                  Concierge
+                </Link>
+                <Link href="/profile" className="px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md">
+                  Profile
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={handleLogout} className="shadow-md hover:shadow-lg">
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Title */}
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
+            Profile
+          </h1>
+          <p className="text-gray-600 text-lg">Manage your profile information</p>
+        </div>
+
+        {/* Profile Header Card */}
+        <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50 mb-6">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-500"></div>
+          <div className="relative p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start gap-6">
+                {/* Avatar */}
+                <div className="relative group/avatar">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full blur-lg opacity-50 group-hover/avatar:opacity-75 transition-opacity"></div>
+                  <div className="relative w-24 h-24 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-lg group-hover/avatar:scale-105 transition-transform">
+                    {candidate.user.last_name?.[0]}{candidate.user.first_name?.[0]}
+                  </div>
+                </div>
+
+                {/* User Info */}
+                <div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    {candidate.user.last_name} {candidate.user.first_name}
+                  </h2>
+                  <div className="flex items-center gap-2 text-gray-600 mb-3">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>{candidate.user.email}</span>
+                  </div>
+                  {candidate.current_position && (
+                    <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      {candidate.current_position}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Edit Button */}
+              <Button
+                onClick={() => setEditMode(!editMode)}
+                variant={editMode ? "outline" : "primary"}
+                className="flex items-center gap-2"
+              >
+                {editMode ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-200/50">
+              <div className="group/stat flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50/50 border border-blue-100/50 hover:shadow-md transition-all">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover/stat:scale-110 transition-transform">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Years of Experience</p>
+                  <p className="text-2xl font-bold text-gray-900">{candidate.years_of_experience}years</p>
+                </div>
+              </div>
+
+              {candidate.expected_salary && (
+                <div className="group/stat flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-100/50 hover:shadow-md transition-all">
+                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg group-hover/stat:scale-110 transition-transform">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Expected Salary</p>
+                    <p className="text-2xl font-bold text-gray-900">¥{candidate.expected_salary.toLocaleString()}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="group/stat flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50/50 border border-purple-100/50 hover:shadow-md transition-all">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover/stat:scale-110 transition-transform">
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Skills</p>
+                  <p className="text-2xl font-bold text-gray-900">{skills.length}items</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Edit Form */}
+            {editMode && (
+              <div className="mt-8 pt-8 border-t border-gray-200/50">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">Edit Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Input
+                    label="Current Position"
+                    value={candidate.current_position || ''}
+                    onChange={(e) => setCandidate({ ...candidate, current_position: e.target.value })}
+                    placeholder="e.g., Senior Engineer"
+                    prefix={
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    }
+                  />
+                  <Input
+                    label="Years of Experience"
+                    type="number"
+                    value={candidate.years_of_experience.toString()}
+                    onChange={(e) => setCandidate({ ...candidate, years_of_experience: parseInt(e.target.value) || 0 })}
+                    placeholder="e.g., 5"
+                    prefix={
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    }
+                  />
+                  <Input
+                    label="Expected Salary"
+                    type="number"
+                    value={candidate.expected_salary?.toString() || ''}
+                    onChange={(e) => setCandidate({ ...candidate, expected_salary: parseInt(e.target.value) || undefined })}
+                    placeholder="e.g., 8000000"
+                    prefix={
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    }
+                  />
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <Button onClick={handleSave} className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save
+                  </Button>
+                  <Button variant="outline" onClick={() => setEditMode(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Skills Section */}
+          <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-full -mr-24 -mt-24 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative p-6 border-b border-gray-200/50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Skills</h3>
+                <div className="flex items-center gap-1 text-sm text-gray-500 font-medium">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                  {skills.length} Skills
+                </div>
+              </div>
+            </div>
+            <div className="relative p-6">
+              {skills.length > 0 ? (
+                <div className="space-y-2">
+                  {skills.map((skill) => (
+                    <div key={skill.id} className="group/skill border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:shadow-md transition-all bg-gradient-to-br from-white to-gray-50/50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-bold text-gray-900 mb-1">{skill.skill.name}</h3>
+                          <p className="text-xs text-gray-600 flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="font-medium">{skill.years_of_experience} years experience</span>
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
+                          skill.proficiency_level === 'expert' ? 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700' :
+                          skill.proficiency_level === 'advanced' ? 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700' :
+                          skill.proficiency_level === 'intermediate' ? 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700' :
+                          'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700'
+                        }`}>
+                          {skill.proficiency_level === 'expert' ? 'Expert' :
+                           skill.proficiency_level === 'advanced' ? 'Advanced' :
+                           skill.proficiency_level === 'intermediate' ? 'Intermediate' : 'Beginner'}
+                        </span>
+                      </div>
+                      {/* Proficiency Bar */}
+                      <div className="relative w-full bg-gradient-to-r from-gray-200 to-gray-300 rounded-full h-2 overflow-hidden shadow-inner">
+                        <div
+                          className={`absolute left-0 top-0 h-full rounded-full transition-all duration-700 ${
+                            skill.proficiency_level === 'expert' ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600' :
+                            skill.proficiency_level === 'advanced' ? 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600' :
+                            skill.proficiency_level === 'intermediate' ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600' :
+                            'bg-gradient-to-r from-gray-400 to-gray-500'
+                          }`}
+                          style={{
+                            width: `${proficiencyPercentage[skill.proficiency_level as keyof typeof proficiencyPercentage] || 25}%`
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="relative inline-block mb-4">
+                    <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-xl animate-pulse"></div>
+                    <div className="relative w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                      <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 font-semibold mb-2">No skills registered</p>
+                  <p className="text-sm text-gray-500">Add skills to enhance your profile</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Education Section */}
+          <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-500/5 to-teal-500/5 rounded-full -mr-24 -mt-24 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative p-6 border-b border-gray-200/50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">Education</h3>
+                <div className="flex items-center gap-1 text-sm text-gray-500 font-medium">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  {education.length}items
+                </div>
+              </div>
+            </div>
+            <div className="relative p-6">
+              {education.length > 0 ? (
+                <div className="space-y-4">
+                  {education.map((edu) => (
+                    <div key={edu.id} className="relative pl-8 pb-4 border-l-2 border-gradient-to-b from-blue-300 to-teal-300 last:border-0">
+                      {/* Timeline dot */}
+                      <div className="absolute -left-2.5 top-0 w-5 h-5 bg-gradient-to-br from-blue-500 to-teal-600 rounded-full border-4 border-white shadow-lg"></div>
+
+                      <div className="group/edu bg-gradient-to-br from-white to-blue-50/30 rounded-xl p-4 hover:shadow-md transition-all border border-blue-100/50">
+                        <h3 className="font-bold text-gray-900 mb-1 text-lg">{edu.institution_name}</h3>
+                        <p className="text-sm text-gray-700 mb-3 font-medium">{edu.field_of_study}</p>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                          <span className="px-3 py-1 bg-gradient-to-r from-blue-100 to-teal-100 text-blue-700 rounded-full font-semibold shadow-sm">
+                            {edu.degree}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="font-medium">{new Date(edu.start_date).getFullYear()}years - {edu.is_current ? 'Present' : `${new Date(edu.end_date!).getFullYear()}years`}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="relative inline-block mb-4">
+                    <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-xl animate-pulse"></div>
+                    <div className="relative w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                      <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 font-semibold mb-2">No education registered</p>
+                  <p className="text-sm text-gray-500">Add education to enhance your profile</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Work Experience Section - Full Width */}
+        <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50 mb-6">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-500"></div>
+          <div className="relative p-6 border-b border-gray-200/50">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Work Experience</h3>
+              <div className="flex items-center gap-1 text-sm text-gray-500 font-medium">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {experience.length}items
+              </div>
+            </div>
+          </div>
+          <div className="relative p-6">
+            {experience.length > 0 ? (
+              <div className="space-y-4">
+                {experience.map((exp) => (
+                  <div key={exp.id} className="relative pl-8 pb-4 border-l-2 border-emerald-200 last:border-0">
+                    {/* Timeline dot */}
+                    <div className={`absolute -left-2.5 top-0 w-5 h-5 rounded-full border-4 border-white shadow-lg ${
+                      exp.is_current ? 'bg-gradient-to-br from-emerald-400 to-teal-500 animate-pulse' : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                    }`}></div>
+
+                    <div className="group/exp bg-gradient-to-br from-white to-emerald-50/30 rounded-xl p-5 hover:shadow-md transition-all border border-emerald-100/50">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-xl mb-1">{exp.position}</h3>
+                          <p className="text-gray-700 font-semibold text-lg">{exp.company_name}</p>
+                        </div>
+                        {exp.is_current && (
+                          <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 text-xs font-bold rounded-full shadow-sm animate-pulse">
+                            Present
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                        <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="font-medium">
+                          {new Date(exp.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })} - {' '}
+                          {exp.is_current ? 'Present' : new Date(exp.end_date!).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+                        </span>
+                      </div>
+
+                      {exp.description && (
+                        <p className="text-sm text-gray-700 leading-relaxed">{exp.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="relative inline-block mb-4">
+                  <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-xl animate-pulse"></div>
+                  <div className="relative w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                    <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-gray-700 font-semibold mb-2">No work experience registered</p>
+                <p className="text-sm text-gray-500">Add work experience to enhance your profile</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* External Links Section */}
+        <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-500"></div>
+          <div className="relative p-6 border-b border-gray-200/50">
+            <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">External Links</h3>
+          </div>
+          <div className="relative p-6">
+            {(candidate.portfolio_url || candidate.github_url || candidate.linkedin_url) ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {candidate.portfolio_url && (
+                  <a
+                    href={candidate.portfolio_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group/link flex items-center gap-4 p-5 border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl hover:border-purple-400 hover:shadow-lg transition-all"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-md group-hover/link:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 group-hover/link:text-purple-600 transition-colors mb-1">Portfolio</p>
+                      <p className="text-xs text-gray-600 truncate">{candidate.portfolio_url}</p>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400 group-hover/link:text-purple-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+
+                {candidate.github_url && (
+                  <a
+                    href={candidate.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group/link flex items-center gap-4 p-5 border-2 border-gray-300 bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl hover:border-gray-500 hover:shadow-lg transition-all"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 rounded-xl flex items-center justify-center shadow-md group-hover/link:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 group-hover/link:text-gray-700 transition-colors mb-1">GitHub</p>
+                      <p className="text-xs text-gray-600 truncate">{candidate.github_url}</p>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400 group-hover/link:text-gray-700 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+
+                {candidate.linkedin_url && (
+                  <a
+                    href={candidate.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group/link flex items-center gap-4 p-5 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl hover:border-blue-400 hover:shadow-lg transition-all"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md group-hover/link:scale-110 transition-transform">
+                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 group-hover/link:text-blue-600 transition-colors mb-1">LinkedIn</p>
+                      <p className="text-xs text-gray-600 truncate">{candidate.linkedin_url}</p>
+                    </div>
+                    <svg className="w-5 h-5 text-gray-400 group-hover/link:text-blue-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="relative inline-block mb-4">
+                  <div className="absolute inset-0 bg-indigo-400/20 rounded-full blur-xl animate-pulse"></div>
+                  <div className="relative w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                    <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-gray-700 font-semibold mb-2">No external links registered</p>
+                <p className="text-sm text-gray-500">Add portfolio or social media links</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

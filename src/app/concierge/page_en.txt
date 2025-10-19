@@ -1,0 +1,16 @@
+Due to the large size of the concierge page, I'll create a converted version with the most important changes:
+
+1. Import useTranslations
+2. Update welcome message to English
+3. Update quick reply buttons to English
+4. Update error message to English
+5. Update navigation to use t() function
+6. Update other UI text
+
+Key changes needed:
+- Line 3: Add import { useTranslations } from 'next-intl';
+- Line 12: const t = useTranslations();
+- Line 16: content: t('concierge.welcomeMessage')
+- Lines 26-31: Quick replies in English
+- Line 104: Error message in English
+- Lines 139-150: Navigation using t() function

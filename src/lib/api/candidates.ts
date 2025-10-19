@@ -1,0 +1,313 @@
+import apiClient from '../../../lib/api/client';
+
+// Types
+export interface Candidate {
+  id: number;
+  user: {
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+    first_name_kana?: string;
+    last_name_kana?: string;
+    phone?: string;
+  };
+  date_of_birth?: string;
+  gender?: 'male' | 'female' | 'other';
+  nationality?: string;
+  address?: string;
+  postal_code?: string;
+  current_position?: string;
+  years_of_experience: number;
+  status: 'active' | 'inactive' | 'interviewing' | 'hired';
+  expected_salary?: number;
+  portfolio_url?: string;
+  github_url?: string;
+  linkedin_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CandidateSkill {
+  id: number;
+  candidate: number;
+  skill: {
+    id: number;
+    name: string;
+    category: string;
+    description?: string;
+  };
+  proficiency_level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  years_of_experience: number;
+}
+
+export interface Education {
+  id: number;
+  candidate: number;
+  institution_name: string;
+  degree: string;
+  field_of_study: string;
+  start_date: string;
+  end_date?: string;
+  is_current: boolean;
+  gpa?: number;
+  description?: string;
+}
+
+export interface WorkExperience {
+  id: number;
+  candidate: number;
+  company_name: string;
+  position: string;
+  employment_type: string;
+  start_date: string;
+  end_date?: string;
+  is_current: boolean;
+  description?: string;
+  achievements?: string;
+  technologies_used?: string;
+  team_size?: number;
+}
+
+export interface Application {
+  id: number;
+  candidate: number;
+  job: {
+    id: number;
+    title: string;
+    job_code: string;
+    location: string;
+    department: string;
+  };
+  cover_letter?: string;
+  matching_score?: number;
+  status: 'draft' | 'submitted' | 'screening' | 'interview' | 'offer' |
+          'accepted' | 'rejected' | 'withdrawn';
+  applied_date: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Interview {
+  id: number;
+  application: number;
+  interview_type: string;
+  interview_type_display: string;
+  round_number: number;
+  scheduled_date: string;
+  duration_minutes: number;
+  interviewers: Array<{
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+    full_name: string;
+    role: string;
+  }>;
+  result: 'pending' | 'completed' | 'passed' | 'failed' | 'on_hold' | 'pass';
+  result_display: string;
+  technical_score?: number;
+  communication_score?: number;
+  cultural_fit_score?: number;
+  overall_score?: number;
+  feedback?: string;
+  strengths?: string;
+  weaknesses?: string;
+  notes?: string;
+  candidate_answers?: {
+    questions: Array<{
+      id: number;
+      question_text: string;
+      question_type: string;
+      difficulty: string;
+      order: number;
+    }>;
+    answers: Record<string, string>;
+    submitted_at: string;
+    session_id?: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+// Candidate Service
+class CandidateService {
+  async getCandidates(params?: {
+    status?: string;
+    skills?: string;
+    search?: string;
+  }) {
+    const response = await apiClient.get<Candidate[]>('/api/candidates/candidates/', { params });
+    return response.data;
+  }
+
+  async getCandidate(id: number) {
+    const response = await apiClient.get<Candidate>(`/api/candidates/candidates/${id}/`);
+    return response.data;
+  }
+
+  async getCurrentCandidate() {
+    const response = await apiClient.get<Candidate>('/api/candidates/candidates/me/');
+    return response.data;
+  }
+
+  async updateCandidate(id: number, data: Partial<Candidate>) {
+    const response = await apiClient.patch<Candidate>(
+      `/api/candidates/candidates/${id}/`,
+      data
+    );
+    return response.data;
+  }
+
+  async getCandidateSkills(candidateId: number) {
+    const response = await apiClient.get<CandidateSkill[]>(
+      `/api/candidates/candidates/${candidateId}/skills/`
+    );
+    return response.data;
+  }
+
+  async addCandidateSkill(candidateId: number, data: {
+    skill_id: number;
+    proficiency_level: string;
+    years_of_experience: number;
+  }) {
+    const response = await apiClient.post<CandidateSkill>(
+      `/api/candidates/candidates/${candidateId}/add_skill/`,
+      data
+    );
+    return response.data;
+  }
+
+  async getCandidateEducation(candidateId: number) {
+    const response = await apiClient.get<Education[]>(
+      `/api/candidates/candidates/${candidateId}/educations/`
+    );
+    return response.data;
+  }
+
+  async addEducation(candidateId: number, data: Partial<Education>) {
+    const response = await apiClient.post<Education>(
+      `/api/candidates/candidates/${candidateId}/add_education/`,
+      data
+    );
+    return response.data;
+  }
+
+  async getCandidateExperience(candidateId: number) {
+    const response = await apiClient.get<WorkExperience[]>(
+      `/api/candidates/candidates/${candidateId}/work_experiences/`
+    );
+    return response.data;
+  }
+
+  async addWorkExperience(candidateId: number, data: Partial<WorkExperience>) {
+    const response = await apiClient.post<WorkExperience>(
+      `/api/candidates/candidates/${candidateId}/add_work_experience/`,
+      data
+    );
+    return response.data;
+  }
+
+  async getApplications(params?: {
+    status?: string;
+  }) {
+    const response = await apiClient.get<Application[] | { count: number; results: Application[] }>(
+      '/api/candidates/applications/',
+      { params }
+    );
+    // ページネーションされたレスポンスの場合は.resultsを返す
+    if (response.data && typeof response.data === 'object' && 'results' in response.data) {
+      return response.data.results;
+    }
+    // 配列の場合はそのまま返す
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  async getMyApplications() {
+    const response = await apiClient.get<Application[]>(
+      '/api/candidates/applications/my_applications/'
+    );
+    return response.data;
+  }
+
+  async getApplication(id: number) {
+    const response = await apiClient.get<Application>(`/api/candidates/applications/${id}/`);
+    return response.data;
+  }
+
+  async updateApplication(id: number, data: Partial<Application>) {
+    const response = await apiClient.patch<Application>(
+      `/api/candidates/applications/${id}/`,
+      data
+    );
+    return response.data;
+  }
+
+  async updateApplicationStatus(id: number, status: string) {
+    const response = await apiClient.post<Application>(
+      `/api/candidates/applications/${id}/update_status/`,
+      { status }
+    );
+    return response.data;
+  }
+
+  async withdrawApplication(id: number) {
+    const response = await apiClient.post(
+      `/api/candidates/applications/${id}/withdraw/`
+    );
+    return response.data;
+  }
+
+  async getInterviews() {
+    const response = await apiClient.get<Interview[]>('/api/candidates/interviews/');
+    return response.data;
+  }
+
+  async getUpcomingInterviews() {
+    const response = await apiClient.get<Interview[]>(
+      '/api/candidates/interviews/upcoming/'
+    );
+    return response.data;
+  }
+
+  async getInterview(id: number) {
+    const response = await apiClient.get<Interview>(
+      `/api/candidates/interviews/${id}/`
+    );
+    return response.data;
+  }
+
+  async getApplicationInterviews(applicationId: number) {
+    const response = await apiClient.get<Interview[] | { count: number; results: Interview[] }>(
+      `/api/candidates/interviews/?application=${applicationId}`
+    );
+    // ページネーションされたレスポンスの場合は.resultsを返す
+    if (response.data && typeof response.data === 'object' && 'results' in response.data) {
+      return response.data.results;
+    }
+    // 配列の場合はそのまま返す
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  async submitInterviewFeedback(id: number, data: {
+    feedback: string;
+    result?: string;
+  }) {
+    const response = await apiClient.post<Interview>(
+      `/api/candidates/interviews/${id}/submit_feedback/`,
+      data
+    );
+    return response.data;
+  }
+
+  async getSkills(params?: {
+    category?: string;
+    search?: string;
+  }) {
+    const response = await apiClient.get('/api/candidates/skills/', { params });
+    return response.data;
+  }
+}
+
+export const candidateService = new CandidateService();

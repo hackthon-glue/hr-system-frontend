@@ -1,0 +1,84 @@
+import { useState } from 'react';
+
+export interface RecommendedJob {
+  job_id: string;
+  job_title: string;
+  skill_match: number;
+  experience_match: number;
+  salary_match: number;
+  overall_match: number;
+  match_reason: string;
+  concerns: string;
+}
+
+export interface MatchingData {
+  recommended_jobs: RecommendedJob[];
+  summary: string;
+  raw_response?: string;
+}
+
+export interface JobMatchResult {
+  message: string;
+  matching_result?: string;  // 旧形式用
+  data?: MatchingData;  // 新形式用
+  session_id: string;
+  is_mock: boolean;
+}
+
+export interface UseJobMatchingReturn {
+  matchJobs: () => Promise<JobMatchResult | null>;
+  isLoading: boolean;
+  error: string | null;
+  results: JobMatchResult | null;
+  reset: () => void;
+}
+
+export function useJobMatching(candidateId: string): UseJobMatchingReturn {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<JobMatchResult | null>(null);
+
+  const matchJobs = async (): Promise<JobMatchResult | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/candidates/candidates/${candidateId}/match_jobs/`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Matching failed');
+      }
+
+      const data: JobMatchResult = await response.json();
+      setResults(data);
+      return data;
+    } catch (err) {
+      const error = err as { message?: string };
+      const errorMessage = err.message || 'An error occurred';
+      setError(errorMessage);
+      console.error('Job matching error:', err);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const reset = () => {
+    setResults(null);
+    setError(null);
+  };
+
+  return { matchJobs, isLoading, error, results, reset };
+}

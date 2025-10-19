@@ -1,0 +1,154 @@
+import apiClient from '../../../lib/api/client';
+
+// Types
+export interface Job {
+  id: number;
+  title: string;
+  job_code: string;
+  department: string;
+  location: string;
+  employment_type: 'full_time' | 'part_time' | 'contract' | 'intern';
+  experience_level: 'junior' | 'mid' | 'senior' | 'lead';
+  description: string;
+  responsibilities: string;
+  qualifications: string;
+  salary_min: number;
+  salary_max: number;
+  benefits: string;
+  status: 'draft' | 'active' | 'paused' | 'closed' | 'filled';
+  hiring_manager: number;
+  published_date: string | null;
+  deadline: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobSkill {
+  id: number;
+  job: number;
+  skill: number;
+  skill_name?: string;
+  requirement_level: 'required' | 'preferred' | 'nice_to_have';
+  minimum_proficiency: string;
+  minimum_years: number;
+  weight: number;
+}
+
+export interface JobRequirement {
+  id: number;
+  job: number;
+  requirement_type: 'must_have' | 'nice_to_have';
+  category: string;
+  description: string;
+  priority: number;
+}
+
+export interface MatchingResult {
+  id: number;
+  job: Job;
+  candidate_id: number;
+  candidate_name: string;
+  candidate_email: string;
+  matching_score: number;
+  skills: string[];
+  current_position: string;
+  years_of_experience: number;
+  is_applied: boolean;
+  created_at: string;
+}
+
+export interface JobApplication {
+  id: number;
+  job: Job;
+  cover_letter: string;
+  matching_score: number;
+  status: string;
+  applied_date: string;
+}
+
+// Job Service
+class JobService {
+  async getJobs(params?: {
+    location?: string;
+    employment_type?: string;
+    experience_level?: string;
+    min_salary?: number;
+    max_salary?: number;
+    search?: string;
+    skills?: string;
+  }) {
+    const response = await apiClient.get<{ count: number; results: Job[] }>('/api/jobs/', { params });
+    return response.data;
+  }
+
+  async getJob(id: number) {
+    const response = await apiClient.get<Job>(`/api/jobs/${id}/`);
+    return response.data;
+  }
+
+  async createJob(data: Partial<Job>) {
+    const response = await apiClient.post<Job>('/api/jobs/', data);
+    return response.data;
+  }
+
+  async updateJob(id: number, data: Partial<Job>) {
+    const response = await apiClient.patch<Job>(`/api/jobs/${id}/`, data);
+    return response.data;
+  }
+
+  async deleteJob(id: number) {
+    await apiClient.delete(`/api/jobs/${id}/`);
+  }
+
+  async getJobSkills(jobId: number) {
+    const response = await apiClient.get<JobSkill[]>(`/api/jobs/${jobId}/skills/`);
+    return response.data;
+  }
+
+  async addJobSkill(jobId: number, data: Partial<JobSkill>) {
+    const response = await apiClient.post<JobSkill>(`/api/jobs/${jobId}/add_skill/`, data);
+    return response.data;
+  }
+
+  async getJobRequirements(jobId: number) {
+    const response = await apiClient.get<JobRequirement[]>(`/api/jobs/${jobId}/requirements/`);
+    return response.data;
+  }
+
+  async applyToJob(jobId: number, coverLetter?: string) {
+    const response = await apiClient.post<JobApplication>(
+      `/api/jobs/${jobId}/apply/`,
+      { cover_letter: coverLetter }
+    );
+    return response.data;
+  }
+
+  async getJobApplications(jobId: number, status?: string) {
+    const params = status ? { status } : undefined;
+    const response = await apiClient.get(
+      `/api/jobs/${jobId}/applications/`,
+      { params }
+    );
+    return response.data;
+  }
+
+  async getMatchingCandidates(jobId: number) {
+    const response = await apiClient.get<MatchingResult[]>(
+      `/api/jobs/${jobId}/matching_candidates/`
+    );
+    return response.data;
+  }
+
+  async getMatchingResults(params?: {
+    min_score?: number;
+    is_applied?: boolean;
+  }) {
+    const response = await apiClient.get<MatchingResult[]>(
+      '/api/jobs/matching-results/',
+      { params }
+    );
+    return response.data;
+  }
+}
+
+export const jobService = new JobService();
