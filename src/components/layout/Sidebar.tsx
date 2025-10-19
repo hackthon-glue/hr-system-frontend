@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/Badge';
 
-interface SidebarItem {
+export interface SidebarItem {
   id: string;
   label: string;
   href: string;
@@ -86,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          {isExpanded && (
+          {isExpanded && item.children && (
             <div className="mt-1">
               {item.children.map(child => renderItem(child, depth + 1))}
             </div>

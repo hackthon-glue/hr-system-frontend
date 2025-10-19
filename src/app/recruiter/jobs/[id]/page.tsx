@@ -263,7 +263,7 @@ export default function RecruiterJobDetailPage() {
                     <svg className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>{req.description || req.requirement || (typeof req === 'string' ? req : '')}</span>
+                    <span>{req.description || (typeof req === 'string' ? req : '')}</span>
                   </li>
                 ))}
               </ul>
@@ -287,7 +287,7 @@ export default function RecruiterJobDetailPage() {
                     key={index}
                     className="px-4 py-2 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all"
                   >
-                    {skill.skill_name || skill.name || (typeof skill === 'string' ? skill : '')}
+                    {skill.skill_name || (typeof skill === 'string' ? skill : '')}
                   </span>
                 ))}
               </div>

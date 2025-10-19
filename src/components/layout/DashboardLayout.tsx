@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Header } from './Header';
-import { Sidebar } from './Sidebar';
+import { Sidebar, SidebarItem } from './Sidebar';
 import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
@@ -13,7 +13,7 @@ interface DashboardLayoutProps {
     role: 'candidate' | 'recruiter' | 'admin';
     avatar?: string;
   };
-  sidebarItems?: unknown[];
+  sidebarItems?: SidebarItem[];
   className?: string;
 }
 

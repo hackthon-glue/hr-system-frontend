@@ -24,9 +24,7 @@ export interface Candidate {
   years_of_experience?: number;
   education?: Education[];
   work_experiences?: WorkExperience[];
-  years_of_experience?: number;
   status: 'active' | 'inactive' | 'interviewing' | 'hired';
-  expected_salary?: number;
   portfolio_url?: string;
   github_url?: string;
   linkedin_url?: string;

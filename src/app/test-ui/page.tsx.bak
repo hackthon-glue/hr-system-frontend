@@ -13,7 +13,7 @@ export default function TestUIPage() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
-  const [toasts, setToasts] = useState<any[]>([]);
+  const [toasts, setToasts] = useState<unknown[]>([]);
 
   const addToast = (variant: 'info' | 'success' | 'warning' | 'danger') => {
     const newToast = {

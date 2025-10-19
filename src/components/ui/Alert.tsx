@@ -133,7 +133,7 @@ export const Alert: React.FC<AlertProps> = ({
 };
 
 // トースト通知コンポーネント
-interface ToastProps {
+export interface ToastProps {
   id?: string;
   variant?: 'info' | 'success' | 'warning' | 'danger';
   title: string;

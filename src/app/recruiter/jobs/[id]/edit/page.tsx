@@ -20,7 +20,7 @@ export default function EditJobPage() {
     description: z.string().min(1, t('recruiter.jobs.descriptionRequired')),
     location: z.string().min(1, t('recruiter.jobs.locationRequired')),
     employment_type: z.enum(['full_time', 'part_time', 'contract', 'internship']),
-    experience_level: z.enum(['entry', 'junior', 'mid', 'senior', 'expert']),
+    experience_level: z.enum(['entry', 'junior', 'mid', 'senior', 'lead']),
     salary_min: z.string().min(1, t('recruiter.jobs.salaryMinRequired')),
     salary_max: z.string().min(1, t('recruiter.jobs.salaryMaxRequired')),
     requirements: z.string().optional(),
@@ -80,12 +80,19 @@ export default function EditJobPage() {
       setError(null);
 
       const jobData = {
-        ...data,
+        title: data.title,
+        company: data.company,
+        description: data.description,
+        location: data.location,
+        employment_type: data.employment_type,
+        experience_level: data.experience_level,
         salary_min: parseInt(data.salary_min),
         salary_max: parseInt(data.salary_max),
+        ...(data.benefits && { benefits: data.benefits }),
+        ...(data.application_deadline && { application_deadline: data.application_deadline }),
       };
 
-      await jobService.updateJob(parseInt(jobId), jobData);
+      await jobService.updateJob(parseInt(jobId), jobData as any);
       router.push(`/recruiter/jobs/${jobId}`);
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };

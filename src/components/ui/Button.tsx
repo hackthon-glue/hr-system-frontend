@@ -109,10 +109,11 @@ export const ButtonGroup: React.FC<ButtonGroupProps> = ({ children, className })
         if (React.isValidElement(child)) {
           const isFirst = index === 0;
           const isLast = index === React.Children.count(children) - 1;
+          const childElement = child as React.ReactElement<any>;
 
-          return React.cloneElement(child as React.ReactElement<unknown>, {
+          return React.cloneElement(childElement, {
             className: cn(
-              child.props.className,
+              childElement.props.className,
               !isFirst && '-ml-px',
               !isFirst && !isLast && 'rounded-none',
               isFirst && 'rounded-r-none',

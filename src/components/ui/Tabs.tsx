@@ -146,7 +146,7 @@ export const Tabs: React.FC<TabsProps> = ({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              ref={(el) => (tabRefs.current[tab.id] = el)}
+              ref={(el) => { tabRefs.current[tab.id] = el; }}
               role="tab"
               aria-selected={activeTab === tab.id}
               aria-controls={`tabpanel-${tab.id}`}

@@ -8,12 +8,13 @@ import { Badge, StatusBadge, ExperienceBadge, SkillBadge, CountBadge } from '@/c
 import { Modal, ConfirmDialog, Drawer } from '@/components/ui/Modal';
 import { Tabs, VerticalTabs } from '@/components/ui/Tabs';
 import { Alert, Toast, ToastContainer, InlineAlert } from '@/components/ui/Alert';
+import type { ToastProps } from '@/components/ui/Alert';
 
 export default function TestUIPage() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showDrawer, setShowDrawer] = useState(false);
-  const [toasts, setToasts] = useState<unknown[]>([]);
+  const [toasts, setToasts] = useState<ToastProps[]>([]);
 
   const addToast = (variant: 'info' | 'success' | 'warning' | 'danger') => {
     const newToast = {
@@ -132,7 +133,7 @@ export default function TestUIPage() {
                 <Badge variant="success">Success</Badge>
                 <Badge variant="warning">Warning</Badge>
                 <Badge variant="danger">Danger</Badge>
-                <Badge variant="info">Info</Badge>
+                <Badge variant="primary">Info</Badge>
               </div>
               <div className="flex gap-2 flex-wrap">
                 <StatusBadge status="active" />
@@ -257,13 +258,13 @@ export default function TestUIPage() {
               </Button>
             </div>
             <div className="flex gap-2 flex-wrap mt-4">
-              <Button variant="info" size="sm" onClick={() => addToast('info')}>
+              <Button variant="primary" size="sm" onClick={() => addToast('info')}>
                 Info Toast
               </Button>
               <Button variant="success" size="sm" onClick={() => addToast('success')}>
                 Success Toast
               </Button>
-              <Button variant="warning" size="sm" onClick={() => addToast('warning')}>
+              <Button variant="outline" size="sm" onClick={() => addToast('warning')}>
                 Warning Toast
               </Button>
               <Button variant="danger" size="sm" onClick={() => addToast('danger')}>
