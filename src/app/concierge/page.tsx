@@ -11,18 +11,12 @@ import { candidateService } from '@/lib/api/candidates';
 export default function ConciergePage() {
   const router = useRouter();
   const t = useTranslations();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '0',
-      role: 'assistant',
-      content: 'Hello! I\'m your Career Concierge.\n\nI can help you with all your career-related questions. Feel free to ask me anything!',
-      timestamp: new Date().toISOString()
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [candidateInfo, setCandidateInfo] = useState<unknown>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   const quickReplies = [
     { id: 1, text: 'How to write a resume?', icon: '📝' },
@@ -34,6 +28,16 @@ export default function ConciergePage() {
   ];
 
   useEffect(() => {
+    setIsMounted(true);
+    // Set initial message on client side only
+    setMessages([
+      {
+        id: '0',
+        role: 'assistant',
+        content: 'Hello! I\'m your Career Concierge.\n\nI can help you with all your career-related questions. Feel free to ask me anything!',
+        timestamp: new Date().toISOString()
+      }
+    ]);
     fetchCandidateInfo();
   }, []);
 
@@ -188,7 +192,12 @@ export default function ConciergePage() {
         <div className="flex-1 mb-4 flex flex-col bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50">
           <div className="p-6 flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
             <div className="space-y-4">
-              {messages.map((message) => (
+              {!isMounted && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-600 border-t-transparent"></div>
+                </div>
+              )}
+              {isMounted && messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -220,8 +229,8 @@ export default function ConciergePage() {
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
                       <p className={`text-xs mt-2 font-medium ${
                         message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                      }`}>
-                        {new Date(message.timestamp).toLocaleTimeString('en-US', {
+                      }`} suppressHydrationWarning>
+                        {isMounted && new Date(message.timestamp).toLocaleTimeString('en-US', {
                           hour: '2-digit',
                           minute: '2-digit'
                         })}
